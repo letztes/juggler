@@ -2,12 +2,16 @@
 
 =pod
 
+done
 * Capture the letters
 * Build all possible strings
 * Look strings up in a dictionary, e.g. aspell
 * Print strings to command line
-* Print strings into the ether
+* Abort string progression if prefix not found in prefix index
 
+todo
+* format stdout in three columns or so
+* README file
 
 =cut
   
@@ -28,13 +32,18 @@ use URI::Escape;
 # Global variables that control the behaviour of this script.
 ########################################################################
 
-my $DEVICE = 'wlan0';
+my $DEVICE = 'eth0';
 
 # Coordinates are keys in two dimensional hash
 my %LETTERS;
 
 # Load initially the dictionary file
 my %DICTIONARY;
+my %TWO_LETTER_INDEX;
+my %THREE_LETTER_INDEX;
+my %FOUR_LETTER_INDEX;
+my %FIVE_LETTER_INDEX;
+my %SIX_LETTER_INDEX;
 
 # Don't print multiple times the same word, even if found on different
 # locations
@@ -95,7 +104,7 @@ sub find_words {
             a_star({
                 'dim_1' => $dim_1,
                 'dim_2' => $dim_2,
-                'word'  => $LETTERS{ $dim_1 }{ $dim_2 },
+                'word'  => '',
                 'visited_href' => { $dim_1 => { $dim_2 => 1} },
             });
         }
@@ -104,10 +113,54 @@ sub find_words {
     return;
 }
 
+sub is_bad_prefix {
+	my $word = shift;
+	if (length($word) == 2) {
+		if (not $TWO_LETTER_INDEX{$word}) {
+			return 1;
+		}
+	}
+	elsif (length($word) == 3) {
+		if (not $THREE_LETTER_INDEX{$word}) {
+			return 1;
+		}
+	}
+	elsif (length($word) == 4) {
+		if (not $FOUR_LETTER_INDEX{$word}) {
+			return 1;
+		}
+	}
+	elsif (length($word) == 5) {
+		if (not $FIVE_LETTER_INDEX{$word}) {
+			return 1;
+		}
+	}
+	elsif (length($word) == 6) {
+		if (not $SIX_LETTER_INDEX{$word}) {
+			return 1;
+		}
+	}
+	else {
+		return 0;
+	}
+	return;
+}
+	
+
 sub a_star {
     my ($args) = @_;
     #say $args->{'dim_1'} . ', ' . $args->{'dim_2'};
     
+	$args->{'word'} .= $LETTERS{ $args->{'dim_1'} }{ $args->{'dim_2'} };
+	$args->{'visited_href'} -> { $args->{'dim_1'} }{ $args->{'dim_2'} } = 1;
+	
+	# abort if prefix not found in index
+	if (is_bad_prefix($args->{'word'})) {
+		say $LOGFILE  localtime() . ' ' . " ... ";
+		delete $args->{'visited_href'} -> { $args->{'dim_1'} }{ $args->{'dim_2'} };
+		return;
+	}
+	
     # only words longer than 3 letters are accepted
     if (length($args->{'word'}) > 2) {
         # lookup in dictionary and say word only if exists
@@ -125,16 +178,22 @@ sub a_star {
         'dim_2' => $args->{'dim_2'},
         'visited_href' => $args->{'visited_href'},
     });
-    return if (not @neighbour_coordinates);
+    
+    if (not @neighbour_coordinates) {
+		delete $args->{'visited_href'} -> { $args->{'dim_1'} }{ $args->{'dim_2'} };
+		return;
+	}
     
     foreach my $neighbour_coordinates (@neighbour_coordinates) {
         say $LOGFILE localtime() . ' ' . $neighbour_coordinates->[0] . ', ' . $neighbour_coordinates->[1] . ', ' . $args->{'word'} . $LETTERS{ $neighbour_coordinates->[0] }{ $neighbour_coordinates->[1] } or die $!;
-        $args->{'visited_href'} -> { $neighbour_coordinates->[0] }{ $neighbour_coordinates->[1] } = 1;
+        
+        # need a disposable one for every path to try
+        my %disposable_visited = %{ $args->{'visited_href'} };
         a_star({
             'dim_1'   => $neighbour_coordinates->[0],
             'dim_2'   => $neighbour_coordinates->[1],
-            'word'    => $args->{'word'} . $LETTERS{ $neighbour_coordinates->[0] }{ $neighbour_coordinates->[1] },
-            'visited_href' => $args->{'visited_href'},
+            'word'    => $args->{'word'},
+            'visited_href' => \%disposable_visited,
         });
     
         
@@ -142,7 +201,8 @@ sub a_star {
         # the recursion and the coordinates visited on the previous
         # path should be accessible again in an alternative path
     }
-        delete $args->{'visited_href'} -> { $args->{'dim_1'} }{ $args->{'dim_2'} };
+    
+	delete $args->{'visited_href'} -> { $args->{'dim_1'} }{ $args->{'dim_2'} };
     
     return;
 }
@@ -167,17 +227,34 @@ sub get_unvisited_neighbours {
 
 sub fill_dictionary {
     say 'open dictionary file...';
-    #open(my $WORDSTREAM, qq[aspell -l de dump master | aspell -l de expand | tr ' ' '\n'|]);
+		#open(my $WORDSTREAM, qq[aspell -l de dump master | aspell -l de expand | tr ' ' '\n'|]);
     open(my $WORDSTREAM, 'dictionary.txt');
     while (my $word = <$WORDSTREAM>) {
-        $word =~ s/ä/ae/g;
-        $word =~ s/ö/oe/g;
-        $word =~ s/ü/ue/g;
-        $word =~ s/ß/ss/g;
+        $word =~ s/ä/ae/gi;
+        $word =~ s/ö/oe/gi;
+        $word =~ s/ü/ue/gi;
+        $word =~ s/ß/ss/gi;
+        $word =~ s/Ä/AE/gi;
+        $word =~ s/Ö/OE/gi;
+        $word =~ s/Ü/UE/gi;
         next if length($word) < 3;
         next if length($word) > 16;
         chomp $word;
         $DICTIONARY{uc($word)} = 1;
+        
+		$TWO_LETTER_INDEX{uc(substr($word, 0, 2))} = 1;
+		$THREE_LETTER_INDEX{uc(substr($word, 0, 3))} = 1;
+        if (length($word) > 3) {
+			$FOUR_LETTER_INDEX{uc(substr($word, 0, 4))} = 1;
+			if (length($word) > 4) {
+				$FIVE_LETTER_INDEX{uc(substr($word, 0, 5))} = 1;
+				if (length($word) > 5) {
+					$SIX_LETTER_INDEX{uc(substr($word, 0, 6))} = 1;
+				}
+			}
+			
+		}
+		
     }
     say 'done reading ' . (scalar (keys %DICTIONARY)) . ' words.';
     return;
@@ -190,9 +267,9 @@ sub main {
     fill_dictionary();
     
     while (my $packet = <$NETTRAFFIC>) {
-        exit if $packet =~ m/Abschied/;
+        exit if $packet =~ m/Abschied|Gratulation/;
         say $PACKET_LOGFILE localtime() . ' ' .  $packet or die $!;
-        if (my @letters = $packet =~ m/([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])$/) {
+        if (my @letters = $packet =~ m/([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)$/) {
         #if (my @letters = 'gJuggle2#JuggleBoTina#27#0#i#2#180#E#A#C#L#S#O#T#L#N#E#E#R#A#C#S#B' =~ m/Juggle.+#JuggleBoT.+#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])$/) {
             #say $packet;
             #say Dumper(@letters);
