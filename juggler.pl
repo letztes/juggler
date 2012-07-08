@@ -42,6 +42,8 @@ my %THREE_LETTER_INDEX;
 my %FOUR_LETTER_INDEX;
 my %FIVE_LETTER_INDEX;
 my %SIX_LETTER_INDEX;
+my %SEVEN_LETTER_INDEX;
+my %EIGHT_LETTER_INDEX;
 
 # Don't print multiple times the same word, even if found on different
 # locations
@@ -135,6 +137,16 @@ sub is_bad_prefix {
 	}
 	elsif (length($word) == 6) {
 		if (not $SIX_LETTER_INDEX{$word}) {
+			return 1;
+		}
+	}
+	elsif (length($word) == 7) {
+		if (not $SEVEN_LETTER_INDEX{$word}) {
+			return 1;
+		}
+	}
+	elsif (length($word) == 8) {
+		if (not $EIGHT_LETTER_INDEX{$word}) {
 			return 1;
 		}
 	}
@@ -250,6 +262,12 @@ sub fill_dictionary {
 				$FIVE_LETTER_INDEX{uc(substr($word, 0, 5))} = 1;
 				if (length($word) > 5) {
 					$SIX_LETTER_INDEX{uc(substr($word, 0, 6))} = 1;
+                    if (length($word) > 6) {
+                        $SEVEN_LETTER_INDEX{uc(substr($word, 0, 6))} = 1;
+                        if (length($word) > 7) {
+                            $EIGHT_LETTER_INDEX{uc(substr($word, 0, 6))} = 1;
+                        }
+                    }
 				}
 			}
 			
