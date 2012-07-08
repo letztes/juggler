@@ -8,10 +8,11 @@ done
 * Look strings up in a dictionary, e.g. aspell
 * Print strings to command line
 * Abort string progression if prefix not found in prefix index
+* format stdout in three columns
 
 todo
-* format stdout in three columns or so
 * README file
+* set network device dynamically
 
 =cut
   
@@ -32,7 +33,11 @@ use URI::Escape;
 # Global variables that control the behaviour of this script.
 ########################################################################
 
-my $DEVICE = 'eth0';
+my $DEVICE = qx(ifconfig | grep -B1 inet | grep -B1 Bcast | awk -F '     ' '{print \$1}');
+chomp($DEVICE);
+
+# In case the above does not work, find out active device name manually
+#my $DEVICE = 'wlan0';
 
 # Coordinates are keys in two dimensional hash
 my %LETTERS;
@@ -96,7 +101,7 @@ sub get_letters_hash {
 }
 
 sub find_words {
-    say '------------------------------------------------------';
+    say "\n------------------------------------------------------";
     
     foreach my $dim_1 (sort keys %LETTERS) {
         
