@@ -166,9 +166,10 @@ sub a_star {
         # lookup in dictionary and say word only if exists
         if ($DICTIONARY{ $args->{'word'} }) {
             if (not $FOUND_WORDS{ $args->{'word'} }) {
-                say $LOGFILE localtime() . ' ' . $args->{'word'} or die $!;
-                say $args->{'word'};
                 $FOUND_WORDS{ $args->{'word'} } = 1;
+                say $LOGFILE localtime() . ' ' . $args->{'word'} or die $!;
+                print sprintf("%-20s", $args->{'word'});
+                print "\n" if (scalar keys %FOUND_WORDS) % 3 == 0;
             }
         }
     }
