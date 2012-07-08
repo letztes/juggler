@@ -9,10 +9,11 @@ done
 * Print strings to command line
 * Abort string progression if prefix not found in prefix index
 * format stdout in three columns
-
-todo
 * README file
 * set network device dynamically
+
+todo
+* nothing
 
 =cut
   
@@ -195,6 +196,7 @@ sub a_star {
         
         # need a disposable one for every path to try
         my %disposable_visited = %{ $args->{'visited_href'} };
+        
         a_star({
             'dim_1'   => $neighbour_coordinates->[0],
             'dim_2'   => $neighbour_coordinates->[1],
@@ -203,11 +205,11 @@ sub a_star {
         });
     
         
-        # delete the last pair of coordinates since we are moving back
-        # the recursion and the coordinates visited on the previous
-        # path should be accessible again in an alternative path
     }
-    
+
+    # delete the last pair of coordinates since we are moving back
+    # the recursion and the coordinates visited on the previous
+    # path should be accessible again in an alternative path
 	delete $args->{'visited_href'} -> { $args->{'dim_1'} }{ $args->{'dim_2'} };
     
     return;
@@ -233,7 +235,7 @@ sub get_unvisited_neighbours {
 
 sub fill_dictionary {
     say 'open dictionary file...';
-		#open(my $WORDSTREAM, qq[aspell -l de dump master | aspell -l de expand | tr ' ' '\n'|]);
+    #open(my $WORDSTREAM, qq[aspell -l de dump master | aspell -l de expand | tr ' ' '\n'|]);
     open(my $WORDSTREAM, 'dictionary.txt');
     while (my $word = <$WORDSTREAM>) {
         $word =~ s/ä/ae/gi;
@@ -288,8 +290,6 @@ sub main {
     close($LOGFILE);
     exit;
 }
-
-
 
 &main();
 
