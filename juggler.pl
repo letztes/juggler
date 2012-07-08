@@ -22,23 +22,15 @@ use warnings;
 
 use feature 'say';
 
-use Data::Dumper;
-use Getopt::Long qw(:config bundling);
-use HTTP::Request::Common;
-use LWP;
-use Pod::Usage;
-use URI::Escape;
-
-
 ########################################################################
 # Global variables that control the behaviour of this script.
 ########################################################################
 
 my $DEVICE = qx(ifconfig | grep -B1 inet | grep -B1 Bcast | awk -F '     ' '{print \$1}');
-chomp($DEVICE);
 
 # In case the above does not work, find out active device name manually
 #my $DEVICE = 'wlan0';
+$DEVICE =~ s/\n+//g;
 
 # Coordinates are keys in two dimensional hash
 my %LETTERS;
