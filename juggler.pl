@@ -301,21 +301,15 @@ sub main {
     open(my $NETTRAFFIC, "sudo tcpdump -i $DEVICE -Aln host 193.254.186.182 or host 193.254.186.183 or host 194.112.167.227 or host 213.95.79.43 -s 0|") or die $!;
     fill_dictionary();
     
-    #here
-    #while (my $packet = <$NETTRAFFIC>) {
-    while (1) {
-        my $packet = 'B#A#I#V#E#E#K#O#Y#I#V#M#R#O#E#E';
+    while (my $packet = <$NETTRAFFIC>) {
         exit if $packet =~ m/Abschied|Gratulation/;
         say $PACKET_LOGFILE localtime() . ' ' .  $packet or die $!;
-        #here
-        say $packet;
+        
         if (my @letters = $packet =~ m/([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)$/) {
             
             @LETTERS = get_letters_matrix(@letters);
             find_words();
         }
-        #here
-        exit;
     }
     close($NETTRAFFIC);
     close($PACKET_LOGFILE);
