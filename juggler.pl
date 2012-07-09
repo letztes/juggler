@@ -57,6 +57,9 @@ my $PACKET_LOGFILE;
 # Subroutines
 ########################################################################
 
+=head2
+Fills a two dimensional hash from one dimensional array.
+=cut
 
 sub get_letters_hash {
     my @letters = @_;
@@ -95,6 +98,10 @@ sub get_letters_hash {
     return %letters;
 }
 
+=head2 find_words
+Calls a_star on each starting position.
+=cut
+
 sub find_words {
     say "\n------------------------------------------------------";
     
@@ -112,6 +119,10 @@ sub find_words {
     
     return;
 }
+
+=head2 is_bad_prefix
+Returns true if given string does not match the beginning of any word
+=cut
 
 sub is_bad_prefix {
 	my $word = shift;
@@ -155,7 +166,20 @@ sub is_bad_prefix {
 	}
 	return;
 }
-	
+
+=head2 a_star
+Not quite the original, since this one frees visited positions on
+forked paths after they were explored and returned to the fork, so
+the positions on that path are accessible from crossing paths later.
+
+Expects current position, all visited positions so far and
+the string built so far.
+
+Calls get_unvisited_neighbours on current position and calls itself
+recursively on each unvisited neighbour position.
+
+Does not return any value.
+=cut
 
 sub a_star {
     my ($args) = @_;
@@ -219,6 +243,11 @@ sub a_star {
     return;
 }
 
+=head2 get_unvisited_neighbours
+Expects current position and list of positions visited so far.
+Returns all adjacent positions that were not yet visited.
+=cut
+
 sub get_unvisited_neighbours {
     my ($args) = @_;
     
@@ -236,6 +265,11 @@ sub get_unvisited_neighbours {
     }
     return @unvisited_neighbours;
 }
+
+=head2 fill_dictionary
+Reads dictionary file.
+Builds some indices as well.
+=cut
 
 sub fill_dictionary {
     say 'open dictionary file...';
@@ -277,6 +311,10 @@ sub fill_dictionary {
     say 'done reading ' . (scalar (keys %DICTIONARY)) . ' words.';
     return;
 }
+
+=head2 main
+The main routine.
+=cut
 
 sub main {
     open($LOGFILE, '>logfile.txt') or die $!;
