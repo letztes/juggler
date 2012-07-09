@@ -32,8 +32,8 @@ my $DEVICE = qx(ifconfig | grep -B1 inet | grep -B1 Bcast | awk -F '     ' '{pri
 #my $DEVICE = 'wlan0';
 $DEVICE =~ s/\n+//g;
 
-# Coordinates are keys in two dimensional hash
-my %LETTERS;
+# Coordinates of the positions. Two dimensional array.
+my @LETTERS;
 
 # Load initially the dictionary file
 my %DICTIONARY;
@@ -61,41 +61,20 @@ my $PACKET_LOGFILE;
 Fills a two dimensional hash from one dimensional array.
 =cut
 
-sub get_letters_hash {
-    my @letters = @_;
-    my %letters = (
-        0 => {
-            0 => $letters[0],
-            1 => $letters[1],
-            2 => $letters[2],
-            3 => $letters[3],
-        },
-        1 => {
-            0 => $letters[4],
-            1 => $letters[5],
-            2 => $letters[6],
-            3 => $letters[7],
-        },
-        2 => {
-            0 => $letters[8],
-            1 => $letters[9],
-            2 => $letters[10],
-            3 => $letters[11],
-        },
-        3 => {
-            0 => $letters[12],
-            1 => $letters[13],
-            2 => $letters[14],
-            3 => $letters[15],
-        },
+sub get_letters_matrix {
+    my @letters = (
+        [  $_[0],  $_[1],  $_[2],  $_[3]  ],
+        [  $_[4],  $_[5],  $_[6],  $_[7], ],
+        [  $_[8],  $_[9], $_[10], $_[11], ],
+        [ $_[12], $_[13], $_[14], $_[15], ],
     );
     
-    say $LOGFILE  localtime() . ' ' . " ( $letters{0}{0} ) ( $letters{0}{1} ) ( $letters{0}{2} ) ( $letters{0}{3} ) ";
-    say $LOGFILE  localtime() . ' ' . " ( $letters{1}{0} ) ( $letters{1}{1} ) ( $letters{1}{2} ) ( $letters{1}{3} ) ";
-    say $LOGFILE  localtime() . ' ' . " ( $letters{2}{0} ) ( $letters{2}{1} ) ( $letters{2}{2} ) ( $letters{2}{3} ) ";
-    say $LOGFILE  localtime() . ' ' . " ( $letters{3}{0} ) ( $letters{3}{1} ) ( $letters{3}{2} ) ( $letters{3}{3} ) ";
+    say $LOGFILE  localtime() . ' ' . " ( $letters[0][0] ) ( $letters[0][1] ) ( $letters[0][2] ) ( $letters[0][3] ) ";
+    say $LOGFILE  localtime() . ' ' . " ( $letters[1][0] ) ( $letters[1][1] ) ( $letters[1][2] ) ( $letters[1][3] ) ";
+    say $LOGFILE  localtime() . ' ' . " ( $letters[2][0] ) ( $letters[2][1] ) ( $letters[2][2] ) ( $letters[2][3] ) ";
+    say $LOGFILE  localtime() . ' ' . " ( $letters[3][0] ) ( $letters[3][1] ) ( $letters[3][2] ) ( $letters[3][3] ) ";
     
-    return %letters;
+    return @letters;
 }
 
 =head2 find_words
@@ -105,9 +84,9 @@ Calls a_star on each starting position.
 sub find_words {
     say "\n------------------------------------------------------";
     
-    foreach my $dim_1 (sort keys %LETTERS) {
+    foreach my $dim_1 (0..$#LETTERS) {
         
-        foreach my $dim_2 (sort keys %{$LETTERS{$dim_1}}) {
+        foreach my $dim_2 (0..$#{$LETTERS[$dim_1]}) {
             a_star({
                 'dim_1' => $dim_1,
                 'dim_2' => $dim_2,
@@ -185,7 +164,7 @@ sub a_star {
     my ($args) = @_;
     #say $args->{'dim_1'} . ', ' . $args->{'dim_2'};
     
-	$args->{'word'} .= $LETTERS{ $args->{'dim_1'} }{ $args->{'dim_2'} };
+	$args->{'word'} .= $LETTERS[ $args->{'dim_1'} ][ $args->{'dim_2'} ];
 	$args->{'visited_href'} -> { $args->{'dim_1'} }{ $args->{'dim_2'} } = 1;
 	
 	# abort if prefix not found in index
@@ -220,7 +199,7 @@ sub a_star {
 	}
     
     foreach my $neighbour_coordinates (@neighbour_coordinates) {
-        say $LOGFILE localtime() . ' ' . $neighbour_coordinates->[0] . ', ' . $neighbour_coordinates->[1] . ', ' . $args->{'word'} . $LETTERS{ $neighbour_coordinates->[0] }{ $neighbour_coordinates->[1] } or die $!;
+        say $LOGFILE localtime() . ' ' . $neighbour_coordinates->[0] . ', ' . $neighbour_coordinates->[1] . ', ' . $args->{'word'} . $LETTERS[ $neighbour_coordinates->[0] ][ $neighbour_coordinates->[1] ] or die $!;
         
         # need a disposable one for every path to try
         my %disposable_visited = %{ $args->{'visited_href'} };
@@ -322,16 +301,21 @@ sub main {
     open(my $NETTRAFFIC, "sudo tcpdump -i $DEVICE -Aln host 193.254.186.182 or host 193.254.186.183 or host 194.112.167.227 or host 213.95.79.43 -s 0|") or die $!;
     fill_dictionary();
     
-    while (my $packet = <$NETTRAFFIC>) {
+    #here
+    #while (my $packet = <$NETTRAFFIC>) {
+    while (1) {
+        my $packet = 'B#A#I#V#E#E#K#O#Y#I#V#M#R#O#E#E';
         exit if $packet =~ m/Abschied|Gratulation/;
         say $PACKET_LOGFILE localtime() . ' ' .  $packet or die $!;
+        #here
+        say $packet;
         if (my @letters = $packet =~ m/([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)#([A-Z]|Qu)$/) {
-        #if (my @letters = 'gJuggle2#JuggleBoTina#27#0#i#2#180#E#A#C#L#S#O#T#L#N#E#E#R#A#C#S#B' =~ m/Juggle.+#JuggleBoT.+#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])#([A-Z])$/) {
-            #say $packet;
-            #say Dumper(@letters);
-            %LETTERS = get_letters_hash(@letters);
+            
+            @LETTERS = get_letters_matrix(@letters);
             find_words();
         }
+        #here
+        exit;
     }
     close($NETTRAFFIC);
     close($PACKET_LOGFILE);
